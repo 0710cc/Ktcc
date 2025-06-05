@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML/CSS/JS实时编辑器</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --dark: #2b2d42;
+            --light: #f8f9fa;
+            --danger: #e63946;
+            --warning: #ff9e00;
+            --info: #4895ef;
+            --html: #e34c26;
+            --css: #264de4;
+            --js: #f7df1e;
+            --editor-bg: #1e1e2e;
+            --header-bg: rgba(20, 20, 40, 0.9);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #1a2a6c, #2b2d42);
+            color: var(--light);
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px 0 40px;
+            animation: fadeIn 1s ease-out;
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 15px;
+            background: linear-gradient(90deg, var(--success), var(--primary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            position: relative;
+            display: inline-block;
+        }
+        
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--success), var(--primary));
+            border-radius: 2px;
+        }
+        
+        .subtitle {
+            color: #a9d6e5;
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin: 25px auto 20px;
+            line-height: 1.6;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+        
+        .editor-container {
+            display: flex;
+            gap: 20px;
+            height: 70vh;
+            margin-bottom: 30px;
+            animation: slideUp 0.8s ease-out;
+        }
+        
+        .code-editors, .preview-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(30, 30, 50, 0.8);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .code-editors:hover, .preview-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        }
+        
+        .editor-header {
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            background: var(--header-bg);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .editor-header h2 {
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+        }
+        
+        .editor-header i {
+            font-size: 1.4rem;
+        }
+        
+        .html-header i { color: var(--html); }
+        .css-header i { color: var(--css); }
+        .js-header i { color: var(--js); }
+        .preview-header i { color: var(--success); }
+        
+        .editor-body {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        textarea.code-input {
+            width: 100%;
+            height: 100%;
+            background: var(--editor-bg);
+            color: #f8f8f2;
+            border: none;
+            padding: 20px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 15px;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+            tab-size: 4;
+        }
+        
+        textarea.code-input:focus {
+            box-shadow: inset 0 0 0 2px var(--primary);
+        }
+        
+        .preview-area {
+            width: 100%;
+            height: 100%;
+            background: white;
+            overflow: auto;
+        }
+        
+        .console-section {
+            background: rgba(30, 30, 50, 0.8);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 30px;
+            animation: fadeIn 1.2s ease-out;
+        }
+        
+        .console-header {
+            padding: 15px 20px;
+            background: var(--header-bg);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .console-header i {
+            color: var(--warning);
+            font-size: 1.4rem;
+        }
+        
+        .console-output {
+            padding: 15px 20px;
+            background: var(--editor-bg);
+            height: 200px; /* 控制台高度增加到200px */
+            overflow-y: auto;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 14px;
+            color: #a9d6e5;
+        }
+        
+        .console-output .log {
+            color: #a9d6e5;
+        }
+        
+        .console-output .error {
+            color: var(--danger);
+        }
+        
+        .console-output .warn {
+            color: var(--warning);
+        }
+        
+        .console-output .info {
+            color: var(--info);
+        }
+        
+        .actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            padding-bottom: 30px;
+            animation: fadeIn 1.4s ease-out;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border-radius: 50px;
+            border: none;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            background: rgba(67, 97, 238, 0.2);
+            color: white;
+            border: 1px solid rgba(67, 97, 238, 0.5);
+        }
+        
+        .btn:hover {
+            background: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.4);
+        }
+        
+        .btn.run {
+            background: rgba(76, 201, 240, 0.2);
+            border: 1px solid rgba(76, 201, 240, 0.5);
+        }
+        
+        .btn.run:hover {
+            background: var(--success);
+            box-shadow: 0 5px 15px rgba(76, 201, 240, 0.4);
+        }
+        
+        .btn.reset {
+            background: rgba(230, 57, 70, 0.2);
+            border: 1px solid rgba(230, 57, 70, 0.5);
+        }
+        
+        .btn.reset:hover {
+            background: var(--danger);
+            box-shadow: 0 5px 15px rgba(230, 57, 70, 0.4);
+        }
+        
+        .btn.download {
+            background: rgba(255, 158, 0, 0.2);
+            border: 1px solid rgba(255, 158, 0, 0.5);
+        }
+        
+        .btn.download:hover {
+            background: var(--warning);
+            box-shadow: 0 5px 15px rgba(255, 158, 0, 0.4);
+        }
+        
+        .btn.copy {
+            background: rgba(159, 43, 104, 0.2);
+            border: 1px solid rgba(159, 43, 104, 0.5);
+        }
+        
+        .btn.copy:hover {
+            background: #9f2b68;
+            box-shadow: 0 5px 15px rgba(159, 43, 104, 0.4);
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 1100px) {
+            .editor-container {
+                flex-direction: column;
+                height: auto;
+            }
+            
+            .code-editors {
+                height: 500px;
+            }
+            
+            .preview-section {
+                height: 500px;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+            
+            .code-editors, .preview-section {
+                border-radius: 8px;
+            }
+            
+            .btn {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
+        }
+        
+        /* 标签页样式 */
+        .tabs {
+            display: flex;
+            background: var(--header-bg);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #a9d6e5;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .tab.active {
+            background: rgba(67, 97, 238, 0.3);
+            color: white;
+        }
+        
+        .tab:hover:not(.active) {
+            background: rgba(67, 97, 238, 0.1);
+        }
+        
+        .tab-content {
+            display: none;
+            height: 100%;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* 状态指示器 */
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 10px;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .status-active {
+            background: #4ade80;
+        }
+        
+        .status-inactive {
+            background: #ef4444;
+            animation: none;
+        }
+        
+        /* 动画 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* 增强脉冲动画效果 */
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 0 0 10px rgba(74, 222, 128, 0.4);
+                transform: scale(1.1);
+            }
+            70% {
+                box-shadow: 0 0 0 15px rgba(74, 222, 128, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
+                transform: scale(1);
+            }
+        }
+        
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(67, 97, 238, 0.5);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        /* 特性卡片 */
+        .features-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 25px;
+            margin: 40px 0;
+        }
+        
+        .feature-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            width: 280px;
+            text-align: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            background: rgba(67, 97, 238, 0.15);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .feature-card i {
+            font-size: 2.5rem;
+            color: var(--success);
+            margin-bottom: 15px;
+        }
+        
+        .feature-card h3 {
+            font-size: 1.4rem;
+            margin: 10px 0 15px;
+            color: white;
+        }
+        
+        .feature-card p {
+            color: #a9d6e5;
+            line-height: 1.6;
+        }
+        
+        /* 控制台按钮容器 */
+        .console-actions {
+            display: flex;
+            gap: 10px;
+            margin-left: auto;
+        }
+        
+        .console-btn {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        /* 复制成功提示 */
+        .copy-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: rgba(25, 135, 84, 0.9);
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transform: translateX(150%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .copy-notification.show {
+            transform: translateX(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <!-- 更新标题 -->
+            <h1><i class="fas fa-code"></i> HTML/CSS/JS实时编辑器</h1>
+            <p class="subtitle">在左侧编写HTML、CSS和JavaScript代码，右侧实时预览效果。控制台可显示JavaScript输出和错误信息。</p>
+            
+            <div class="features-container">
+                <div class="feature-card">
+                    <i class="fas fa-bolt"></i>
+                    <h3>实时预览</h3>
+                    <p>即时查看代码更改效果，无需手动刷新页面</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-laptop-code"></i>
+                    <h3>多语言支持</h3>
+                    <p>支持HTML、CSS和JavaScript代码编辑</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-terminal"></i>
+                    <h3>控制台输出</h3>
+                    <p>捕获并显示JavaScript控制台日志和错误</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-copy"></i>
+                    <h3>复制代码</h3>
+                    <p>一键复制当前编辑的代码到剪贴板</p>
+                </div>
+            </div>
+        </header>
+        
+        <div class="editor-container">
+            <div class="code-editors">
+                <div class="tabs">
+                    <div class="tab active" data-tab="html"><i class="fab fa-html5"></i> HTML</div>
+                    <div class="tab" data-tab="css"><i class="fab fa-css3-alt"></i> CSS</div>
+                    <div class="tab" data-tab="js"><i class="fab fa-js"></i> JavaScript</div>
+                </div>
+                
+                <div class="tab-content active" id="html-editor">
+                    <div class="editor-body">
+                        <textarea id="html-code" class="code-input" spellcheck="false">&lt;!DOCTYPE html&gt;
+&lt;html lang="zh-CN"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;我的网页&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;div class="container"&gt;
+        &lt;h1&gt;欢迎使用实时编辑器&lt;/h1&gt;
+        &lt;p&gt;在此处编辑HTML代码，右侧将实时显示结果。&lt;/p&gt;
+        
+        &lt;div class="card"&gt;
+            &lt;h2&gt;示例卡片&lt;/h2&gt;
+            &lt;p&gt;这是一个带有阴影效果的卡片组件。&lt;/p&gt;
+            &lt;button id="demo-btn"&gt;点击我&lt;/button&gt;
+        &lt;/div&gt;
+        
+        &lt;div class="features"&gt;
+            &lt;div class="feature"&gt;
+                &lt;i class="fas fa-bolt"&gt;&lt;/i&gt;
+                &lt;h3&gt;快速&lt;/h3&gt;
+                &lt;p&gt;实时预览无需刷新&lt;/p&gt;
+            &lt;/div&gt;
+            &lt;div class="feature"&gt;
+                &lt;i class="fas fa-laptop-code"&gt;&lt;/i&gt;
+                &lt;h3&gt;强大&lt;/h3&gt;
+                &lt;p&gt;支持HTML/CSS/JS&lt;/p&gt;
+            &lt;/div&gt;
+            &lt;div class="feature"&gt;
+                &lt;i class="fas fa-mobile-alt"&gt;&lt;/i&gt;
+                &lt;h3&gt;响应式&lt;/h3&gt;
+                &lt;p&gt;适配各种设备尺寸&lt;/p&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;</textarea>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="css-editor">
+                    <div class="editor-body">
+                        <textarea id="css-code" class="code-input" spellcheck="false">body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    color: white;
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 2.5rem;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.card {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 25px;
+    margin: 30px auto;
+    max-width: 600px;
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    text-align: center;
+}
+
+.card h2 {
+    margin-top: 0;
+    color: #ffdd40;
+}
+
+button {
+    background: #ffdd40;
+    color: #2c3e50;
+    border: none;
+    padding: 12px 30px;
+    font-size: 1.1rem;
+    border-radius: 50px;
+    cursor: pointer;
+    margin-top: 15px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 221, 64, 0.3);
+}
+
+button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(255, 221, 64, 0.4);
+    background: #ffd400;
+}
+
+.features {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 25px;
+    margin-top: 40px;
+}
+
+.feature {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 25px;
+    width: 280px;
+    text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.feature:hover {
+    transform: translateY(-10px);
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.feature i {
+    font-size: 3rem;
+    color: #ffdd40;
+    margin-bottom: 15px;
+}
+
+.feature h3 {
+    font-size: 1.5rem;
+    margin: 10px 0;
+    color: #ffdd40;
+}
+
+@media (max-width: 768px) {
+    .features {
+        flex-direction: column;
+        align-items: center;
+    }
+}</textarea>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="js-editor">
+                    <div class="editor-body">
+                        <textarea id="js-code" class="code-input" spellcheck="false">document.addEventListener('DOMContentLoaded', function() {
+    const demoBtn = document.getElementById('demo-btn');
+    const features = document.querySelectorAll('.feature');
+    
+    // 按钮点击事件
+    demoBtn.addEventListener('click', function() {
+        alert('按钮点击事件已触发！');
+        console.log('用户点击了演示按钮');
+    });
+    
+    // 为每个特性卡片添加悬停效果
+    features.forEach(feature => {
+        feature.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.05)';
+        });
+        
+        feature.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+        });
+    });
+    
+    // 控制台日志示例
+    console.log('JavaScript 已成功加载！');
+    console.info('尝试编辑代码并实时查看效果');
+    console.warn('这是一个警告信息示例');
+    
+    // 错误示例（取消注释查看效果）
+    // console.error('这是一个错误信息示例');
+});</textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="preview-section">
+                <div class="editor-header preview-header">
+                    <h2><i class="fas fa-eye"></i> 实时预览 <span class="status-indicator status-active"></span></h2>
+                </div>
+                <div class="editor-body">
+                    <iframe id="preview" class="preview-area"></iframe>
+                </div>
+            </div>
+        </div>
+        
+        <div class="console-section">
+            <div class="console-header">
+                <h2><i class="fas fa-terminal"></i> 控制台输出</h2>
+                <div class="console-actions">
+                    <!-- 添加导出日志按钮 -->
+                    <button id="export-log-btn" class="btn console-btn">
+                        <i class="fas fa-file-export"></i> 导出日志
+                    </button>
+                    <button id="clear-console" class="btn console-btn">
+                        <i class="fas fa-trash"></i> 清空控制台
+                    </button>
+                </div>
+            </div>
+            <div id="console-output" class="console-output">
+                <div class="log">控制台准备就绪...</div>
+                <div class="info">输入代码后，JavaScript输出和错误将显示在这里</div>
+            </div>
+        </div>
+        
+        <div class="actions">
+            <button class="btn run" id="run-btn">
+                <i class="fas fa-play"></i> 运行代码
+            </button>
+            <button class="btn reset" id="reset-btn">
+                <i class="fas fa-redo"></i> 重置代码
+            </button>
+            <button class="btn download" id="download-btn">
+                <i class="fas fa-download"></i> 导出HTML
+            </button>
+            <!-- 添加复制代码按钮 -->
+            <button class="btn copy" id="copy-btn">
+                <i class="fas fa-copy"></i> 复制代码
+            </button>
+        </div>
+    </div>
+
+    <!-- 复制成功提示 -->
+    <div class="copy-notification" id="copy-notification">
+        <i class="fas fa-check-circle"></i> 代码已复制到剪贴板！
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const htmlEditor = document.getElementById('html-code');
+            const cssEditor = document.getElementById('css-code');
+            const jsEditor = document.getElementById('js-code');
+            const previewFrame = document.getElementById('preview');
+            const consoleOutput = document.getElementById('console-output');
+            const runBtn = document.getElementById('run-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const downloadBtn = document.getElementById('download-btn');
+            const copyBtn = document.getElementById('copy-btn');
+            const clearConsoleBtn = document.getElementById('clear-console');
+            const exportLogBtn = document.getElementById('export-log-btn');
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const statusIndicator = document.querySelector('.status-indicator');
+            const copyNotification = document.getElementById('copy-notification');
+            
+            // 保存默认代码
+            const defaultHTML = htmlEditor.value;
+            const defaultCSS = cssEditor.value;
+            const defaultJS = jsEditor.value;
+            
+            // 标签切换功能
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // 移除所有活动标签
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+                    
+                    // 添加活动类
+                    tab.classList.add('active');
+                    const tabId = tab.getAttribute('data-tab') + '-editor';
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+            
+            // 更新预览
+            function updatePreview() {
+                const html = htmlEditor.value;
+                const css = cssEditor.value;
+                const js = jsEditor.value;
+                
+                const preview = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <style>${css}</style>
+                    </head>
+                    <body>
+                        ${html}
+                        <script>
+                            // 重写 console 方法以捕获输出
+                            const originalConsole = {};
+                            ['log', 'error', 'warn', 'info'].forEach(method => {
+                                originalConsole[method] = console[method];
+                                console[method] = function(...args) {
+                                    originalConsole[method].apply(console, args);
+                                    const message = args.map(arg => 
+                                        typeof arg === 'object' ? JSON.stringify(arg) : arg
+                                    ).join(' ');
+                                    
+                                    window.parent.postMessage({
+                                        type: 'console',
+                                        method: method,
+                                        message: message
+                                    }, '*');
+                                };
+                            });
+                            
+                            // 错误捕获
+                            window.addEventListener('error', function(event) {
+                                window.parent.postMessage({
+                                    type: 'console',
+                                    method: 'error',
+                                    message: event.message + ' at ' + event.filename + ':' + event.lineno + ':' + event.colno
+                                }, '*');
+                            });
+                            
+                            // 执行用户代码
+                            try {
+                                ${js}
+                            } catch(e) {
+                                console.error(e.message);
+                            }
+                        <\/script>
+                    </body>
+                    </html>
+                `;
+                
+                // 更新iframe
+                previewFrame.srcdoc = preview;
+                
+                // 更新状态指示器
+                statusIndicator.classList.remove('status-inactive');
+                statusIndicator.classList.add('status-active');
+            }
+            
+            // 监听消息来自iframe
+            window.addEventListener('message', function(event) {
+                if (event.data && event.data.type === 'console') {
+                    const messageElement = document.createElement('div');
+                    messageElement.className = event.data.method;
+                    
+                    // 添加时间戳
+                    const now = new Date();
+                    const timestamp = `[${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}]`;
+                    
+                    messageElement.textContent = `${timestamp} ${event.data.message}`;
+                    consoleOutput.appendChild(messageElement);
+                    
+                    // 滚动到底部
+                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                }
+            });
+            
+            // 运行按钮点击事件
+            runBtn.addEventListener('click', function() {
+                // 添加运行日志
+                const runLog = document.createElement('div');
+                runLog.className = 'log';
+                runLog.textContent = '[执行] 代码正在运行...';
+                consoleOutput.appendChild(runLog);
+                
+                // 滚动到底部
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                
+                updatePreview();
+            });
+            
+            // 重置按钮点击事件
+            resetBtn.addEventListener('click', function() {
+                if (confirm('确定要重置所有代码吗？')) {
+                    htmlEditor.value = defaultHTML;
+                    cssEditor.value = defaultCSS;
+                    jsEditor.value = defaultJS;
+                    
+                    const resetLog = document.createElement('div');
+                    resetLog.className = 'log';
+                    resetLog.textContent = '[系统] 代码已重置为默认值';
+                    consoleOutput.appendChild(resetLog);
+                    
+                    // 滚动到底部
+                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                    
+                    updatePreview();
+                }
+            });
+            
+            // 下载按钮点击事件
+            downloadBtn.addEventListener('click', function() {
+                const html = htmlEditor.value;
+                const css = cssEditor.value;
+                const js = jsEditor.value;
+                
+                const fullHtml = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>我的网页</title>
+                        <style>${css}</style>
+                    </head>
+                    <body>
+                        ${html}
+                        <script>${js}<\/script>
+                    </body>
+                    </html>
+                `;
+                
+                const blob = new Blob([fullHtml], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'my-page.html';
+                document.body.appendChild(a);
+                a.click();
+                
+                // 添加下载日志
+                const downloadLog = document.createElement('div');
+                downloadLog.className = 'info';
+                downloadLog.textContent = '[系统] 文件已下载: my-page.html';
+                consoleOutput.appendChild(downloadLog);
+                
+                // 滚动到底部
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                
+                // 清理
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 100);
+            });
+            
+            // 清空控制台
+            clearConsoleBtn.addEventListener('click', function() {
+                consoleOutput.innerHTML = '<div class="log">控制台已清空</div>';
+            });
+            
+            // 复制代码按钮点击事件
+            copyBtn.addEventListener('click', function() {
+                const activeTab = document.querySelector('.tab.active');
+                if (activeTab) {
+                    const tabType = activeTab.getAttribute('data-tab');
+                    let codeToCopy = '';
+                    
+                    if (tabType === 'html') {
+                        codeToCopy = htmlEditor.value;
+                    } else if (tabType === 'css') {
+                        codeToCopy = cssEditor.value;
+                    } else if (tabType === 'js') {
+                        codeToCopy = jsEditor.value;
+                    }
+                    
+                    // 复制到剪贴板
+                    navigator.clipboard.writeText(codeToCopy).then(() => {
+                        // 显示复制成功通知
+                        copyNotification.classList.add('show');
+                        
+                        // 在控制台显示复制成功信息
+                        const copyLog = document.createElement('div');
+                        copyLog.className = 'log';
+                        copyLog.textContent = `[系统] 已复制${tabType.toUpperCase()}代码到剪贴板`;
+                        consoleOutput.appendChild(copyLog);
+                        consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                        
+                        // 3秒后隐藏通知
+                        setTimeout(() => {
+                            copyNotification.classList.remove('show');
+                        }, 3000);
+                    });
+                }
+            });
+            
+            // 导出日志按钮点击事件
+            exportLogBtn.addEventListener('click', function() {
+                // 获取控制台的所有文本内容
+                const logs = consoleOutput.innerText;
+                const blob = new Blob([logs], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'console_logs.txt';
+                document.body.appendChild(a);
+                a.click();
+                
+                // 添加导出日志
+                const exportLog = document.createElement('div');
+                exportLog.className = 'info';
+                exportLog.textContent = '[系统] 控制台日志已导出: console_logs.txt';
+                consoleOutput.appendChild(exportLog);
+                
+                // 滚动到底部
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                
+                // 清理
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 100);
+            });
+            
+            // 编辑器输入事件（使用防抖）
+            let debounce;
+            [htmlEditor, cssEditor, jsEditor].forEach(editor => {
+                editor.addEventListener('input', function() {
+                    clearTimeout(debounce);
+                    
+                    // 更新状态指示器
+                    statusIndicator.classList.remove('status-active');
+                    statusIndicator.classList.add('status-inactive');
+                    
+                    debounce = setTimeout(() => {
+                        updatePreview();
+                        
+                        // 添加自动更新日志
+                        const updateLog = document.createElement('div');
+                        updateLog.className = 'info';
+                        updateLog.textContent = '[系统] 检测到代码变化，自动更新预览...';
+                        consoleOutput.appendChild(updateLog);
+                        
+                        // 滚动到底部
+                        consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                    }, 1000);
+                });
+            });
+            
+            // 初始化预览
+            updatePreview();
+        });
+    </script>
+</body>
+</html>
